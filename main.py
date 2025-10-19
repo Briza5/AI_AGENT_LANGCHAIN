@@ -20,15 +20,27 @@ def add_task(task, desc=None):
     """Přidá úkol do uživatelského task listu. Použij pokud uživatel chce přidat nebo vytvořit nový úkol."""  # Tool description in Czech
     todoist.add_task(content=task,
                      description=desc)  # Add the task to Todoist
+@tool    
+def show_tasks():
+    """Ukáže všechny úkoly v uživatelském task listu. Použij pokud uživatel chce vidět své úkoly."""  
+    # Tool description in Czech
+    results_paginator = todoist.get_tasks() # Get results paginator with all tasks
+    tasks = [] # Initialize an empty list to store tasks
+    for task_list in results_paginator:
+        for task in task_list:
+            tasks.append(task.content) # Append the content of each task to the list
+    return tasks
 
-tools = [add_task]  # List of tools available for the model
+tools = [add_task, show_tasks]  # List of tools available for the model
 # Initialize the ChatGoogleGenerativeAI model with the specified parameters
 llm = ChatGoogleGenerativeAI(
     model='gemini-2.5-flash',
     google_api_key=gemini_api_key,
     temperature=0.3)
 
-system_prompt = "Jseš nápomocný asistent, který pomáhá uživatelům přidávat úkoly do Todoist."  # Define the system prompt in Czech
+system_prompt = """Jseš nápomocný asistent,
+ který pomáhá uživatelům přidávat úkoly do Todoist. Pomůžeš uživateli zobrazit všechny existující úkoly.
+ Pokud uživatel zadá pokyn k ukázání úkolů, zobrazíš mu všechny úkoly v jeho seznamu ve formě odrážek"""  # Define the system prompt in Czech
 
 # Define the prompt template with system and human messages
 prompt = ChatPromptTemplate([
@@ -47,7 +59,7 @@ agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)  # Creat
 
 history = []
 while True:
-    user_input = input("Zadejte svůj úkol: ")  # Define the user input in Czech
+    user_input = input("Zadejte příkaz: ")  # Define the user input in Czech
     response = agent_executor.invoke({"input": user_input, "history": history})  # Invoke the agent executor with the user input
     print(response["output"])  # Print the response from the model
     history.append(HumanMessage(content=user_input))  # Append the user message to history
